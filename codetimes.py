@@ -2,9 +2,9 @@
 # coding: utf-8
 import sys
 import configparser
+import logging
 import requests
 
-import flask
 import github
 from github import Github
 from geopy import geocoders
@@ -91,6 +91,8 @@ def get_location(username: str):
     location = None
     try:
         location = gh.get_user(username).location
+    except github.GithubException.BadCredentialsException as e:
+        logging.error(f'{e}')
     except Exception as e:
         print("Error getting location", e)
     return location
