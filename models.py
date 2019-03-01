@@ -1,8 +1,9 @@
 import datetime
 
 import github
-import pandas as pd
+from sqlalchemy.orm import validates
 
+from api import gh, geo
 from app import db
 from cache import Cache
 
@@ -16,10 +17,16 @@ class GHUser(db.Model):
     timezone = db.Column(db.String(80))
     plot_filename = db.Column(db.String(80), unique=True)
 
-    def __init__(self, username, location=None, timezone=None):
+    @validates('username')
+    def validate_username(self, key, username):
+        assert len(username) <= 39
+        return username
+
+    def __init__(self, username, location=None, timezone=None, events=None):
         self.username = username
         self.location = location
         self.timezone = timezone
+        self.events = events
 
     def __repr__(self):
         return f'<User {self.username}>'
@@ -28,7 +35,7 @@ class GHUser(db.Model):
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     timestamp = db.Column(db.DateTime, index=True, nullable=False)
-    username = db.relationship('GHUser', backref=db.backref('events', lazy=True))
+    username = db.relationship('GHUser', backref=db.backref('user_events', lazy=True))
     username_id = db.Column(db.Integer, db.ForeignKey('ghuser.id'),
                             nullable=False)
 
@@ -60,14 +67,6 @@ def add_query(username):
     db.session.commit()
 
 
-def add_events(username: str, timestamps: pd.Series):
-    """Add events to username."""
-    # TODO: Check if timestamp exists before adding to user
-    user = get_user(username,create=True)
-    [db.session.add(Event(timestamp=timestamp, username=user)) for timestamp in timestamps]
-    db.session.commit()
-
-
 def add_user(username: str, **kwargs):
     """Add user to database"""
     user = GHUser(username, **kwargs)
@@ -87,8 +86,16 @@ def query_user(username: str, attr='plot_filename'):
 def get_user(username: str, create:bool=False):
     """Get user database object."""
     user = GHUser.query.filter_by(username=username).first()
-    if not user and create:
-        user = add_user(username)
+    if not user:
+        try:
+            gh_user = gh.get_user(username)
+        except github.UnknownObjectException:
+            # User not found on github
+            raise github.UnknownObjectException
+        if create:
+            events_pages = gh_user.get_events()
+            events = [x.last_modified for x in events_pages]
+            user = add_user(username, location=gh_user.location, events=events)
     return user
 
 

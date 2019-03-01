@@ -1,8 +1,8 @@
 import os
 from datetime import timedelta
 
-
 import flask
+import github
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -11,7 +11,7 @@ import pandas as pd
 import sqlite3
 
 from codetimes import m2hm, dt2m, get_tz, get_activity, get_location
-from models import get_user, add_plot, add_events, GHUser
+from models import get_user, add_plot, GHUser
 
 
 def discrete_cmap(N: int, base_cmap=None):
@@ -24,27 +24,25 @@ def discrete_cmap(N: int, base_cmap=None):
 
 
 def plot_activity(username: str):
-    """Plot activity and add user to database."""
+    """Generate plot and add user to database."""
     username = username.lower()
     user = get_user(username, create=True)
     if user.plot_filename:
         return user.plot_filename
-    location = get_location(username)
-    timezone = get_tz(location)
-    user.location = location
+    timezone = get_tz(user.location)
     user.timezone = timezone
     timestamps = get_activity(username)
     if timezone:
         timestamps = timestamps.dt.tz_convert(timezone)
-
-    add_events(username, timestamps)
     # TODO: Get latest timestamp for updating old entries
     # url_suffix=''
     # if 'GITHUB_CLIENT_ID' in os.environ and 'GITHUB_CLIENT_SECRET' in os.environ:
     #     url_suffix = f"?client_id=${os.environ.get('GITHUB_CLIENT_ID')}&client_secret=${os.environ.get('GITHUB_CLIENT_SECRET')}"
-    return plot_timestamps(timestamps, user = user, timezone=timezone)
+    plot_filename = plot_timestamps(timestamps, user=user, timezone=timezone)
+    return plot_filename
 
-def plot_timestamps(timestamps:pd.Series, user:GHUser, timezone=None):
+
+def plot_timestamps(timestamps: pd.Series, user: GHUser, timezone=None):
     # color points distant from midday (1pm)
     dist_from_13h = abs(timestamps.dt.hour - 13)
 
@@ -76,23 +74,28 @@ def create_plot_filename(username: str):
     # TODO: Update to something reasonable
     return f'{username}_test.png'
 
+
 def to_local_path(filename: str):
-    if not flask.has_app_context(): # Debugging only
+    if not flask.has_app_context():  # Debugging only
         return filename
     return os.path.join(flask.current_app.config['UPLOAD_FOLDER'], filename)
 
 
 def get_plot(username: str):
-    """Get plot filename from username."""
+    """Main entrance to plotting - get plot filename from username."""
     username = username.lower()
 
     # Check if already in database
-    user = get_user(username)
+    try:
+        user = get_user(username)
+    except github.UnknownObjectException:
+        raise github.UnknownObjectException
     if user.plot_filename:
         return user.plot_filename
     else:
         plot_filename = plot_activity(username)
     return plot_filename
+
 
 if __name__ == '__main__':
     # timestamps = pd.date_range(start='1/1/2019', periods=5, freq='20t')
@@ -103,5 +106,3 @@ if __name__ == '__main__':
     user = GHUser.query.filter_by(id=1).first()
     plot_timestamps(timestamps, user)
     plt.show()
-
-    

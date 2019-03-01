@@ -1,29 +1,23 @@
 #!/usr/bin/env python3
 # coding: utf-8
 import sys
-import configparser
 import logging
 import requests
 
 import github
-from github import Github
-from geopy import geocoders
 from geopy.exc import GeocoderTimedOut
 import matplotlib.pyplot as plt
 import pandas as pd
 from pandas.plotting import register_matplotlib_converters
 
+from api import gh, geo
 from models import GHUser, Cache
 
 
 register_matplotlib_converters()
 
-config = configparser.ConfigParser()
-config.read('config.ini')
 
 MAX_PAGES = 10  # Github limit is 30 events x 10 pages
-gh = Github(config['DEFAULT']['GITHUB_API_KEY'])
-geo = geocoders.GoogleV3(api_key=config['DEFAULT']['GOOGLE_API_KEY'])
 
 
 def localize(datetime, tz):
