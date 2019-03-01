@@ -26,45 +26,19 @@ def discrete_cmap(N: int, base_cmap=None):
 def plot_activity(username: str):
     """Plot activity and add user to database."""
     username = username.lower()
-    timezone = ''
-    timestamps = None
-
-    user = get_user(username)
-    # TODO: Get latest timestamp for updating old entries
-    # TODO: Reorganize flow
-    if user and user.plot_filename:
+    user = get_user(username, create=True)
+    if user.plot_filename:
         return user.plot_filename
-    elif user and user.events:
-        # Plot activity
-        pass
-    elif user and user.timezone:
-        # Get activity
-        timestamps = get_activity(username)
-        if timezone:
-            timestamps = timestamps.dt.tz_convert(timezone)
-        add_events(username, timestamps)
-    elif user and user.location:
-        # Get activity and timezone
-        location = user.location
-        timezone = get_tz(location)
-        if timezone:
-            timestamps = timestamps.dt.tz_convert(timezone)
-        user.timezone = timezone
-        add_events(username, timestamps)
-    else:
-        # Get everything
-        location = get_location(username)
-        if location:
-            user.location = str(location)
-            timezone = get_tz(location)
-            user.timezone = timezone
-        timestamps = get_activity(username)
-        if timezone:
-            timestamps = timestamps.dt.tz_convert(timezone)
-        add_events(username, timestamps)
-
-    events = user.events or get_activity(username)
-    timestamps = pd.Series([pd.to_datetime(x.timestamp) for x in events])
+    location = get_location(username)
+    timezone = get_tz(location)
+    user.location = location
+    user.timezone = timezone
+    timestamps = get_activity(username)
+    if timezone:
+        timestamps = timestamps.dt.tz_convert(timezone)
+    import ipdb;ipdb.set_trace()
+    add_events(username, timestamps)
+    # TODO: Get latest timestamp for updating old entries
     # url_suffix=''
     # if 'GITHUB_CLIENT_ID' in os.environ and 'GITHUB_CLIENT_SECRET' in os.environ:
     #     url_suffix = f"?client_id=${os.environ.get('GITHUB_CLIENT_ID')}&client_secret=${os.environ.get('GITHUB_CLIENT_SECRET')}"

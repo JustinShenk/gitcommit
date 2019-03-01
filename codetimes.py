@@ -68,7 +68,7 @@ def get_gh_event_times(gh_user: github.NamedUser.NamedUser):
         datetime = datetime.strptime(event.last_modified, '%a, %d %b %Y %H:%M:%S GMT')
         timestamps.append(datetime.isoformat())
     timestamps = pd.Series(timestamps[::-1])
-    print(f"{len(timestamps)} events found for {gh_user.login} since {timestamps.iloc[0]}")
+    logging.info(f"{len(timestamps)} events found for {gh_user.login} since {timestamps.iloc[0]}")
     return timestamps
 
 
@@ -83,7 +83,7 @@ def get_activity(username, timezone=None):
             timestamps.append(event['created_at'])
 
     timestamps = pd.to_datetime(pd.Series(timestamps))[::-1]
-    print(f"{len(timestamps)} events found for {username} since {timestamps.iloc[0]}")
+    logging.info(f"{len(timestamps)} events found for {username} since {timestamps.iloc[0]}")
     return timestamps
 
 
@@ -94,7 +94,7 @@ def get_location(username: str):
     except github.GithubException.BadCredentialsException as e:
         logging.error(f'{e}')
     except Exception as e:
-        print("Error getting location", e)
+        logging.error(f"Error getting location: {e}")
     return location
 
 

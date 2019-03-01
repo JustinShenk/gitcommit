@@ -63,7 +63,7 @@ def add_query(username):
 def add_events(username: str, timestamps: pd.Series):
     """Add events to username."""
     # TODO: Check if timestamp exists before adding to user
-    user = get_user(username)
+    user = get_user(username,create=True)
     [db.session.add(Event(timestamp=timestamp, username=user)) for timestamp in timestamps]
     db.session.commit()
 
@@ -79,14 +79,14 @@ def add_user(username: str, **kwargs):
 def query_user(username: str):
     """Main method - get plot filename from user."""
     add_query(username)
-    user = get_user(username)
+    user = get_user(username, create=True)
     return user.plot_filename
 
 
-def get_user(username: str):
+def get_user(username: str, create:bool=False):
     """Get user database object."""
     user = GHUser.query.filter_by(username=username).first()
-    if not user:
+    if not user and create:
         user = add_user(username)
     return user
 

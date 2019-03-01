@@ -26,7 +26,7 @@ def add():
         return render_template('index.html', **results)
     plot_filename = query_user(username)
     if not plot_filename:
-        plot_filename = get_plot(username)
+        _ = get_plot(username)
     results['users'] = GHUser.query.filter(GHUser.plot_filename != None)
     return render_template('index.html', **results)
 
