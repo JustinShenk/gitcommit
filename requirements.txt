@@ -1,0 +1,8 @@
+geopy
+matplotlib
+pandas
+pygithub
+flask
+flask_sqlalchemy
+sqlite3
+gevent
