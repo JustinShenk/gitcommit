@@ -36,7 +36,7 @@ def plot_activity(username: str):
     timestamps = get_activity(username)
     if timezone:
         timestamps = timestamps.dt.tz_convert(timezone)
-    import ipdb;ipdb.set_trace()
+
     add_events(username, timestamps)
     # TODO: Get latest timestamp for updating old entries
     # url_suffix=''
