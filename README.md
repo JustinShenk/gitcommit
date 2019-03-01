@@ -1,6 +1,6 @@
 # Code time tracking
 
-For a healthier, happier coding community.
+For a healthier, happier open source community.
 
 ## Get started
 Modify `config.ini` and `config.py`. Run `pip install -r requirements.txt`. Start databases with
