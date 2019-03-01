@@ -9,6 +9,8 @@ from app import app
 
 def validate(ex):
     ex = ex.rstrip()
+    if len(ex) > 39:
+        return False
     return bool(re.match(r"^[A-Za-z0-9_-]*$", ex))
 
 
@@ -25,7 +27,10 @@ def add():
         results['users'] = GHUser.query.filter(GHUser.plot_filename != None)
         return render_template('index.html', **results)
     plot_filename = query_user(username)
-    if not plot_filename:
+    if plot_filename:
+        # Already in database
+        flash('User is already added.','info')
+    else:
         _ = get_plot(username)
     results['users'] = GHUser.query.filter(GHUser.plot_filename != None)
     return render_template('index.html', **results)

@@ -76,11 +76,12 @@ def add_user(username: str, **kwargs):
     return user
 
 
-def query_user(username: str):
+def query_user(username: str, attr='plot_filename'):
     """Main method - get plot filename from user."""
     add_query(username)
     user = get_user(username, create=True)
-    return user.plot_filename
+    if attr == 'plot_filename':
+        return user.plot_filename
 
 
 def get_user(username: str, create:bool=False):

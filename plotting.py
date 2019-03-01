@@ -55,7 +55,6 @@ def plot_timestamps(timestamps:pd.Series, user:GHUser, timezone=None):
 
     fig, ax = plt.subplots(figsize=(8, 6))
 
-    ax.set_xlim(dates[0] - timedelta(days=1), dates[-1] + timedelta(days=1))
     ax.set_ylim(240, 1440 + 240)  # 4am
     ax.set_ylabel(timezone or 'UTC' + f' ({user.location})')
     ax.yaxis.set_major_locator(ticker.MultipleLocator(60))
@@ -93,7 +92,6 @@ def get_plot(username: str):
         return user.plot_filename
     else:
         plot_filename = plot_activity(username)
-        # local_path = to_local_path(plot_filename)
     return plot_filename
 
 if __name__ == '__main__':
