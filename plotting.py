@@ -47,7 +47,7 @@ def plot_activity(username: str, overwrite=False):
 def plot_timestamps(timestamps: pd.Series, user: GHUser, timezone=None):
     """Plot datetimes with matplotlib."""
 
-    if timezone and timestamps:
+    if timezone is not None and timestamps is not None:
         timestamps = timestamps.dt.tz_convert(timezone)
 
     # color points distant from midday (1pm)
