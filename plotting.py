@@ -27,6 +27,8 @@ def plot_activity(username: str):
     """Generate plot and add user to database."""
     username = username.lower()
     user = get_user(username, create=True)
+    if user is None:
+        return None
     if user.plot_filename:
         return user.plot_filename
     timezone = get_tz(user.location)
@@ -86,10 +88,9 @@ def get_plot(username: str):
     username = username.lower()
 
     # Check if already in database
-    try:
-        user = get_user(username)
-    except github.UnknownObjectException:
-        raise github.UnknownObjectException
+    user = get_user(username)
+    if user is None: # not found on GitHub
+        return None
     if user.plot_filename:
         return user.plot_filename
     else:

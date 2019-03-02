@@ -31,11 +31,9 @@ def add():
         # Already in database
         flash('User is already added.','info')
     else:
-        try:
-            _ = get_plot(username)
-        except github.UnknownObjectException:
+        plot_filename = get_plot(username)
+        if plot_filename is None:
             flash(f'User {username} not found on GitHub.', 'danger')
-
     # Return user view
     results['users'] = GHUser.query.filter(GHUser.plot_filename != None)
     return render_template('index.html', **results)

@@ -1,4 +1,5 @@
 import datetime
+import logging
 
 import github
 from sqlalchemy.orm import validates
@@ -76,9 +77,11 @@ def add_user(username: str, **kwargs):
 
 
 def query_user(username: str, attr='plot_filename'):
-    """Main method - get plot filename from user."""
+    """Main method - get plot filename from user. Returns None if note found."""
     add_query(username)
     user = get_user(username, create=True)
+    if user is None:
+        return None
     if attr == 'plot_filename':
         return user.plot_filename
 
@@ -89,9 +92,9 @@ def get_user(username: str, create:bool=False):
     if not user:
         try:
             gh_user = gh.get_user(username)
-        except github.UnknownObjectException:
-            # User not found on github
-            raise github.UnknownObjectException
+        except github.UnknownObjectException as e:
+            # User not found on GitHub
+            return None
         if create:
             events_pages = gh_user.get_events()
             events = [x.last_modified for x in events_pages]
@@ -108,7 +111,7 @@ def create_user_from_gh(gh_user: github.NamedUser.NamedUser, events=[], timezone
         db.session.add(Event(timestamp=timestamp, username=user))
     db.session.add(user)
     db.session.commit()
-    print(f"Added user {username} to database.")
+    logging.info(f"Added user {username} to database.")
 
 
 def add_plot(user: GHUser, plot_filename):
