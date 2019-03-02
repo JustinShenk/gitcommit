@@ -10,7 +10,8 @@ class Cache(object):
         cur = conn.cursor()
         cur.execute('CREATE TABLE IF NOT EXISTS '
                     'geo ( '
-                    'location STRING PRIMARY KEY, '
+                    'id INTEGER PRIMARY KEY, '
+                    'location STRING, '
                     'timezone STRING '
                     ')')
         conn.commit()
