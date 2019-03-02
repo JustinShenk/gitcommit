@@ -37,7 +37,7 @@ def add():
             if r.json():
                 flash(f'User {username} not found on GitHub.', 'danger')
             else:
-                flash(f"User {username} public activity: {r.json()['message']}''.', 'danger")
+                flash(f"User {username} public activity: {r.json()['message']}", 'danger')
     return redirect(url_for('index'))
 
 
