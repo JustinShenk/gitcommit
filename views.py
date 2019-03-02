@@ -20,7 +20,7 @@ def add():
     if request.method == 'GET':
         return redirect(url_for('index'))
 
-    username = request.form.get('name_field').strip()
+    username = request.form.get('name_field').strip().lower()
     if not validate(username):
         flash('Username is not valid', 'danger')
         return redirect(url_for('index'))
@@ -36,8 +36,8 @@ def add():
             r = requests.get(f'https://api.github.com/users/{username}/events')
             res = r.json()
             if res:
-                message = res['message']
-                flash(f"User {username} user: {message}", 'danger')
+                message = res.get('message', '')
+                flash(f"User {username}: {message}", 'danger')
             else:
                 flash(f'User {username} has no recent public activity on GitHub.', 'danger')
 
