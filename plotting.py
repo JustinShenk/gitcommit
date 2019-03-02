@@ -34,7 +34,7 @@ def plot_activity(username: str, overwrite=False):
     timezone = get_tz(user.location)
     user.timezone = timezone
     timestamps = get_user_activity(username)
-    if not timestamps:
+    if timestamps is None:
         return None
     # TODO: Get latest timestamp for updating old entries
     # url_suffix=''

@@ -51,7 +51,7 @@ def get_tz(location):
 
 
 def to_iso(events):
-    timestamps = []
+    timestamps = None
     if events:
         timestamps = [x.timestamp.isoformat() for x in events]    
     return timestamps
