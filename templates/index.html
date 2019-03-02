@@ -73,8 +73,8 @@
         <th>Plot</th>
     </tr>
         {% for user in users|reverse %}
-            <tr>
-              <td> <a href="https://github.com/{{ user.username }}">{{ user.username }}</a>
+            <tr id="{{user.username}}">
+              <td><a href="https://github.com/{{ user.username }}">{{ user.username }}</a>
               </td>
                   <td>
                     <img src="{{ url_for('uploads', filename=user.plot_filename) }}" height=400/>

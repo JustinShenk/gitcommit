@@ -29,6 +29,7 @@ def add():
     if plot_filename:
         # Already in database
         flash('User is already added.','info')
+        return redirect(url_for(f'index', _anchor=username))
     else:
         plot_filename = get_plot(username)
         db.session.commit()
