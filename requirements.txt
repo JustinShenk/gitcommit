@@ -7,3 +7,4 @@ flask
 flask_sqlalchemy
 sqlite3
 gevent
+seaborn
