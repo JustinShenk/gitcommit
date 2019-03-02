@@ -1,5 +1,6 @@
 import re
 
+import requests
 from flask import flash, render_template, request, send_from_directory, url_for, redirect
 
 from plotting import get_plot
@@ -32,7 +33,11 @@ def add():
         plot_filename = get_plot(username)
         db.session.commit()
         if plot_filename is None:
-            flash(f'User {username} not found on GitHub.', 'danger')
+            r = requests.get(f'https://api.github.com/users/{username}/events')
+            if r.json():
+                flash(f'User {username} not found on GitHub.', 'danger')
+            else:
+                flash(f"User {username} public activity: {r.json()['message']}''.', 'danger")
     return redirect(url_for('index'))
 
 

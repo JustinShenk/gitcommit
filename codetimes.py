@@ -50,26 +50,18 @@ def get_tz(location):
     return timezone
 
 
-def get_gh_event_times(gh_user: github.NamedUser.NamedUser):
+def to_iso(events):
     timestamps = []
-    events = gh_user.events
-    if not events:
-        print(f"No events found for {gh_user.login}")
-        return None
-    for event in events:
-        datetime = datetime.strptime(event.last_modified, '%a, %d %b %Y %H:%M:%S GMT')
-        timestamps.append(datetime.isoformat())
-    if timestamps:
-        timestamps = pd.Series(timestamps[::-1])
-        logging.info(f"{len(timestamps)} events found for {gh_user.login} since {timestamps.iloc[0]}")
+    if events:
+        timestamps = [x.timestamp.isoformat() for x in events]    
     return timestamps
-
+    
 
 def get_user_activity(username, method='api'):
     """Returns formatted timestamps for GitHub user converted to timezone."""
     user = GHUser.query.filter_by(username=username).first()
     timezone = user.timezone
-    timestamps = [x.timestamp.isoformat() for x in user.events]
+    timestamps = to_iso(user.events)
 
     if not timestamps and method == 'scrape':
         events_url = f'https://api.github.com/users/{username}/events'
@@ -84,7 +76,7 @@ def get_user_activity(username, method='api'):
         # Get datetime
         events = [x.created_at for x in events_pages]
         add_events(user, events)
-        timestamps = get_gh_event_times(gh_user)
+        timestamps = to_iso(user.events)
 
     if timestamps:
         # Format, reverse, and localize

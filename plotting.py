@@ -34,6 +34,8 @@ def plot_activity(username: str, overwrite=False):
     timezone = get_tz(user.location)
     user.timezone = timezone
     timestamps = get_user_activity(username)
+    if not timestamps:
+        return None
     # TODO: Get latest timestamp for updating old entries
     # url_suffix=''
     # if 'GITHUB_CLIENT_ID' in os.environ and 'GITHUB_CLIENT_SECRET' in os.environ:
@@ -45,7 +47,7 @@ def plot_activity(username: str, overwrite=False):
 def plot_timestamps(timestamps: pd.Series, user: GHUser, timezone=None):
     """Plot datetimes with matplotlib."""
 
-    if timezone is not None:
+    if timezone and timestamps:
         timestamps = timestamps.dt.tz_convert(timezone)
 
     # color points distant from midday (1pm)
