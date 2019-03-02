@@ -1,8 +1,6 @@
 import os
-from datetime import timedelta
 
 import flask
-import github
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -10,7 +8,7 @@ from matplotlib.ticker import FuncFormatter as ff
 import pandas as pd
 import sqlite3
 
-from codetimes import m2hm, dt2m, get_tz, get_activity, get_location
+from codetimes import m2hm, dt2m, get_tz, get_user_activity, get_location
 from models import get_user, add_plot, GHUser
 
 
@@ -23,19 +21,19 @@ def discrete_cmap(N: int, base_cmap=None):
     return base.from_list(cmap_name, color_list, N)
 
 
-def plot_activity(username: str):
+def plot_activity(username: str, overwrite=False):
     """Generate plot and add user to database."""
     username = username.lower()
     user = get_user(username, create=True)
     if user is None:
+        # User not found on GitHub
         return None
-    if user.plot_filename:
+    if not overwrite and user.plot_filename:
         return user.plot_filename
+
     timezone = get_tz(user.location)
     user.timezone = timezone
-    timestamps = get_activity(username)
-    if timezone:
-        timestamps = timestamps.dt.tz_convert(timezone)
+    timestamps = get_user_activity(username)
     # TODO: Get latest timestamp for updating old entries
     # url_suffix=''
     # if 'GITHUB_CLIENT_ID' in os.environ and 'GITHUB_CLIENT_SECRET' in os.environ:
@@ -45,6 +43,11 @@ def plot_activity(username: str):
 
 
 def plot_timestamps(timestamps: pd.Series, user: GHUser, timezone=None):
+    """Plot datetimes with matplotlib."""
+
+    if timezone is not None:
+        timestamps = timestamps.dt.tz_convert(timezone)
+
     # color points distant from midday (1pm)
     dist_from_13h = abs(timestamps.dt.hour - 13)
 
@@ -74,7 +77,7 @@ def plot_timestamps(timestamps: pd.Series, user: GHUser, timezone=None):
 
 def create_plot_filename(username: str):
     # TODO: Update to something reasonable
-    return f'{username}_test.png'
+    return f'{username}_activity.png'
 
 
 def to_local_path(filename: str):
@@ -86,7 +89,6 @@ def to_local_path(filename: str):
 def get_plot(username: str):
     """Main entrance to plotting - get plot filename from username."""
     username = username.lower()
-
     # Check if already in database
     user = get_user(username)
     if user is None: # not found on GitHub
@@ -94,7 +96,7 @@ def get_plot(username: str):
     if user.plot_filename:
         return user.plot_filename
     else:
-        plot_filename = plot_activity(username)
+        plot_filename = plot_activity(username=username)
     return plot_filename
 
 

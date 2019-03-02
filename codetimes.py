@@ -11,11 +11,9 @@ import pandas as pd
 from pandas.plotting import register_matplotlib_converters
 
 from api import gh, geo
-from models import GHUser, Cache
-
+from models import GHUser, Cache, add_events
 
 register_matplotlib_converters()
-
 
 MAX_PAGES = 10  # Github limit is 30 events x 10 pages
 
@@ -61,23 +59,39 @@ def get_gh_event_times(gh_user: github.NamedUser.NamedUser):
     for event in events:
         datetime = datetime.strptime(event.last_modified, '%a, %d %b %Y %H:%M:%S GMT')
         timestamps.append(datetime.isoformat())
-    timestamps = pd.Series(timestamps[::-1])
-    logging.info(f"{len(timestamps)} events found for {gh_user.login} since {timestamps.iloc[0]}")
+    if timestamps:
+        timestamps = pd.Series(timestamps[::-1])
+        logging.info(f"{len(timestamps)} events found for {gh_user.login} since {timestamps.iloc[0]}")
     return timestamps
 
 
+def get_user_activity(username, method='api'):
+    """Returns formatted timestamps for GitHub user converted to timezone."""
+    user = GHUser.query.filter_by(username=username).first()
+    timezone = user.timezone
+    timestamps = [x.timestamp.isoformat() for x in user.events]
 
-def get_activity(username, timezone=None):
-    events_url = f'https://api.github.com/users/{username}/events'
+    if not timestamps and method == 'scrape':
+        events_url = f'https://api.github.com/users/{username}/events'
+        timestamps = []
+        for page in range(MAX_PAGES):
+            events = requests.get(events_url + f"?page={page}")
+            for event in events.json():
+                timestamps.append(event['created_at'])
+    elif not timestamps and method == 'api':
+        gh_user = gh.get_user(username)
+        events_pages = gh_user.get_events()
+        # Get datetime
+        events = [x.created_at for x in events_pages]
+        add_events(user, events)
+        timestamps = get_gh_event_times(gh_user)
 
-    timestamps = []
-    for page in range(MAX_PAGES):
-        events = requests.get(events_url + f"?page={page}")
-        for event in events.json():
-            timestamps.append(event['created_at'])
-
-    timestamps = pd.to_datetime(pd.Series(timestamps))[::-1]
-    logging.info(f"{len(timestamps)} events found for {username} since {timestamps.iloc[0]}")
+    if timestamps:
+        # Format, reverse, and localize
+        timestamps = pd.to_datetime(pd.Series(timestamps))[::-1]
+        if timezone:
+            timestamps = timestamps.dt.tz_localize('UTC')
+            timestamps = timestamps.dt.tz_convert(timezone)
     return timestamps
 
 

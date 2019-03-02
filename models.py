@@ -13,7 +13,7 @@ class GHUser(db.Model):
     __tablename__ = 'ghuser'
 
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
+    username = db.Column(db.String(40), unique=True, nullable=False)
     location = db.Column(db.String(80))
     timezone = db.Column(db.String(80))
     plot_filename = db.Column(db.String(80), unique=True)
@@ -23,40 +23,25 @@ class GHUser(db.Model):
         assert len(username) <= 39
         return username
 
-    def __init__(self, username, location=None, timezone=None, events=None):
-        self.username = username
-        self.location = location
-        self.timezone = timezone
-        self.events = events
-
     def __repr__(self):
         return f'<User {self.username}>'
 
 
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, index=True, nullable=False)
-    username = db.relationship('GHUser', backref=db.backref('user_events', lazy=True))
-    username_id = db.Column(db.Integer, db.ForeignKey('ghuser.id'),
-                            nullable=False)
-
-    def __init__(self, timestamp, username):
-        self.timestamp = timestamp
-        self.username = username
+    timestamp = db.Column(db.DateTime, nullable=False)
+    ghuser_id = db.Column(db.Integer, db.ForeignKey('ghuser.id'),
+                          nullable=False)
+    ghuser = db.relationship('GHUser', backref=db.backref('events', lazy=True))
 
     def __repr__(self):
-        return f'<Event {self.timestamp}, username {self.username}>'
+        return f'<Event {self.timestamp}, username {self.ghuser.username}>'
 
 
 class Query(db.Model):
-    # __table_args__ = {'extend_existing': True}
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=False)
     timestamp = db.Column(db.String(80), default=datetime.datetime.now())
-
-    def __init__(self, username, timestamp):
-        self.username = username
-        self.timestamp = timestamp
 
     def __repr__(self):
         return f'<Query {self.username}, {self.timestamp}>'
@@ -70,9 +55,10 @@ def add_query(username):
 
 def add_user(username: str, **kwargs):
     """Add user to database"""
-    user = GHUser(username, **kwargs)
+    user = GHUser(username=username, **kwargs)
     db.session.add(user)
     db.session.commit()
+    logging.info(f"Added user {username} to database with {len(user.events)} events.")
     return user
 
 
@@ -86,7 +72,14 @@ def query_user(username: str, attr='plot_filename'):
         return user.plot_filename
 
 
-def get_user(username: str, create:bool=False):
+def add_events(user: GHUser, events: list):
+    """Add events (datetime) to database."""
+    for e in events:
+        db.session.add(Event(timestamp=e, ghuser=user))
+    db.session.commit()
+
+
+def get_user(username: str, create: bool = False):
     """Get user database object."""
     user = GHUser.query.filter_by(username=username).first()
     if not user:
@@ -96,22 +89,12 @@ def get_user(username: str, create:bool=False):
             # User not found on GitHub
             return None
         if create:
+            user = add_user(username, location=gh_user.location)
             events_pages = gh_user.get_events()
-            events = [x.last_modified for x in events_pages]
-            user = add_user(username, location=gh_user.location, events=events)
+            # Get datetime
+            events = [x.created_at for x in events_pages]
+            add_events(user, events)
     return user
-
-
-def create_user_from_gh(gh_user: github.NamedUser.NamedUser, events=[], timezone=None):
-    """Add user to database from github API user object."""
-    username = gh_user.login
-    location = gh_user.location
-    user = GHUser(username, location=location, timezone=timezone)
-    for timestamp in events:
-        db.session.add(Event(timestamp=timestamp, username=user))
-    db.session.add(user)
-    db.session.commit()
-    logging.info(f"Added user {username} to database.")
 
 
 def add_plot(user: GHUser, plot_filename):

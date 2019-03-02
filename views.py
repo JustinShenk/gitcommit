@@ -1,11 +1,10 @@
 import re
 
-from flask import flash, render_template, request, send_from_directory
+from flask import flash, render_template, request, send_from_directory, url_for, redirect
 
 from plotting import get_plot
 from models import *
-from app import app
-
+from app import app, db
 
 def validate(ex):
     ex = ex.rstrip()
@@ -17,35 +16,31 @@ def validate(ex):
 @app.route('/add', methods=['GET','POST'])
 def add():
     error = None
-    results = {}
     if request.method == 'GET':
-        results['users'] = GHUser.query.filter(GHUser.plot_filename != None)
-        return render_template('index.html', **results)
+        return redirect(url_for('index'))
+
     username = request.form.get('name_field').strip()
     if not validate(username):
         flash('Username is not valid', 'danger')
-        results['users'] = GHUser.query.filter(GHUser.plot_filename != None)
-        return render_template('index.html', **results)
+        return redirect(url_for('index'))
+
     plot_filename = query_user(username)
     if plot_filename:
         # Already in database
         flash('User is already added.','info')
     else:
         plot_filename = get_plot(username)
+        db.session.commit()
         if plot_filename is None:
             flash(f'User {username} not found on GitHub.', 'danger')
-    # Return user view
-    results['users'] = GHUser.query.filter(GHUser.plot_filename != None)
-    return render_template('index.html', **results)
+    return redirect(url_for('index'))
 
 
 @app.route("/", methods=['GET','POST'])
 def index():
-    results = {}
-    if request.method == 'GET':
-        results['users'] = GHUser.query.filter(GHUser.plot_filename != None)
-        return render_template('index.html', **results)
-    return render_template('index.html', **results)
+    results={}
+    users = GHUser.query.filter(GHUser.plot_filename != None)
+    return render_template('index.html', users=users)
 
 
 @app.route('/uploads/<filename>')
