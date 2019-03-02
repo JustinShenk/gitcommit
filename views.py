@@ -34,10 +34,14 @@ def add():
         db.session.commit()
         if plot_filename is None:
             r = requests.get(f'https://api.github.com/users/{username}/events')
-            if r.json():
-                flash(f'User {username} not found on GitHub.', 'danger')
+            res = r.json()
+            if res:
+                message = res['message']
+                flash(f"User {username} user: {message}", 'danger')
             else:
-                flash(f"User {username} public activity: {r.json()['message']}", 'danger')
+                flash(f'User {username} has no recent public activity on GitHub.', 'danger')
+
+
     return redirect(url_for('index'))
 
 
