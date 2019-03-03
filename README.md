@@ -10,3 +10,7 @@ Modify `config.ini` and `config.py`. Run `pip install -r requirements.txt`. Star
 Test retrieval with `python codetimes.py <github-username>`.
 
 Start the server with `python app.py`.
+
+## Example
+
+![image](torvalds_activity.png)
