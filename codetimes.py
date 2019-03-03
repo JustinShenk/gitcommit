@@ -44,6 +44,8 @@ def get_tz(location):
     except GeocoderTimedOut as e:
         print("Error: geocode failed on input %s with message %s" % (location, e.message))
         return None
+    except TypeError:
+        return None
     tz = geo.timezone((lat, lng))
     timezone = tz.zone
     cache.save_to_cache(location, timezone)
